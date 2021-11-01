@@ -1,0 +1,19 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_OPTIONS=noautodbgsym
+
+%:
+	dh $@ --without autoreconf
+
+override_dh_auto_configure:
+	./configure --prefix=/usr --with-gtk=3.0 --enable-nettle --enable-gcrypt --enable-nautilus --enable-thunar --enable-nemo --enable-caja
+
+override_dh_installchangelogs:
+	dh_installchangelogs NEWS
+
+override_dh_makeshlibs:
+	dh_makeshlibs -Xlibgtkhash-properties
+
+override_dh_auto_install:
+	dh_auto_install
+	rm -rf debian/gtkhash/usr/share/applications
