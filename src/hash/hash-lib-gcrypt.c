@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2007-2020 Tristan Heaven <tristan@tristanheaven.net>
+ *   Copyright (C) 2007-2022 Tristan Heaven <tristan@tristanheaven.net>
  *
  *   This file is part of GtkHash.
  *
@@ -43,7 +43,7 @@ static bool gtkhash_hash_lib_gcrypt_set_algo(const enum hash_func_e id,
 	int *algo)
 {
 	switch (id) {
-#if ((GCRYPT_VERSION_NUMBER) >= 0x010800)
+#if (GCRYPT_VERSION_NUMBER >= 0x010800)
 		case HASH_FUNC_BLAKE2B:   *algo = GCRY_MD_BLAKE2B_512;  break;
 		case HASH_FUNC_BLAKE2S:   *algo = GCRY_MD_BLAKE2S_256;  break;
 #endif
@@ -57,11 +57,14 @@ static bool gtkhash_hash_lib_gcrypt_set_algo(const enum hash_func_e id,
 		case HASH_FUNC_SHA256:    *algo = GCRY_MD_SHA256;       break;
 		case HASH_FUNC_SHA384:    *algo = GCRY_MD_SHA384;       break;
 		case HASH_FUNC_SHA512:    *algo = GCRY_MD_SHA512;       break;
-#if ((GCRYPT_VERSION_NUMBER) >= 0x010700)
+#if (GCRYPT_VERSION_NUMBER >= 0x010700)
 		case HASH_FUNC_SHA3_224:  *algo = GCRY_MD_SHA3_224;     break;
 		case HASH_FUNC_SHA3_256:  *algo = GCRY_MD_SHA3_256;     break;
 		case HASH_FUNC_SHA3_384:  *algo = GCRY_MD_SHA3_384;     break;
 		case HASH_FUNC_SHA3_512:  *algo = GCRY_MD_SHA3_512;     break;
+#endif
+#if (GCRYPT_VERSION_NUMBER >= 0x010900)
+		case HASH_FUNC_SM3:       *algo = GCRY_MD_SM3;          break;
 #endif
 		case HASH_FUNC_TIGER192:  *algo = GCRY_MD_TIGER;        break;
 		case HASH_FUNC_WHIRLPOOL: *algo = GCRY_MD_WHIRLPOOL;    break;
@@ -81,12 +84,12 @@ bool gtkhash_hash_lib_gcrypt_is_supported(const enum hash_func_e id)
 		return false;
 
 	if (!gcry_check_version(HASH_LIB_GCRYPT_MIN_VER)) {
-		g_warning("gcrypt-" HASH_LIB_GCRYPT_MIN_VER " is required");
+		g_debug("gcrypt-" HASH_LIB_GCRYPT_MIN_VER " is required");
 		return false;
 	}
 
 	if (G_UNLIKELY(gcry_md_open(&data.h, data.algo, 0) != GPG_ERR_NO_ERROR)) {
-		g_warning("gcry_md_open failed (%d)", id);
+		g_debug("gcry_md_open failed (%d)", id);
 		return false;
 	}
 

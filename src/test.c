@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2007-2020 Tristan Heaven <tristan@tristanheaven.net>
+ *   Copyright (C) 2007-2021 Tristan Heaven <tristan@tristanheaven.net>
  *
  *   This file is part of GtkHash.
  *
@@ -49,7 +49,13 @@ static void delay(void)
 	}
 }
 
-static void select_func(const enum hash_func_e id, const bool active)
+static void select_gui_view(const enum gui_view_e view)
+{
+	gui_set_view(view);
+	delay();
+}
+
+static void select_hash_func(const enum hash_func_e id, const bool active)
 {
 	if (hash.funcs[id].enabled == active)
 		return;
@@ -101,7 +107,7 @@ static void test_hash_func(const struct hash_func_s *func)
 
 #define t(FUNC, TEXT, DIGEST) \
 	if (func->id == G_PASTE(HASH_FUNC_, FUNC)) { \
-		select_func(func->id, true); \
+		select_hash_func(func->id, true); \
 		test_hash_func_digest(func->id, TEXT, NULL, DIGEST); \
 		tested = true; \
 	}
@@ -137,6 +143,7 @@ static void test_hash_func(const struct hash_func_s *func)
 	t(SM3,        "", "1ab21d8355cfa17f8e61194831e81a8f22bec8c728fefb747ed035eb5082aa2b");
 	t(TIGER192,   "", "24f0130c63ac933216166e76b1bb925ff373de2d49584e7a");
 	t(WHIRLPOOL,  "", "19fa61d75522a4669b44e39c1d2e1726c530232130d407f89afee0964997f7a73e83be698b288febcf88e3e03c4f0757ea8964e59b63d93708b138cc42a66eb3");
+	t(XXH64,      "", "ef46db3751d8e999");
 
 	t(CRC32,     "The quick brown fox jumps over the lazy dog", "414fa339");
 	t(CRC32C,    "The quick brown fox jumps over the lazy dog", "22620404");
@@ -156,6 +163,7 @@ static void test_hash_func(const struct hash_func_s *func)
 	t(SHA3_384,  "The quick brown fox jumps over the lazy dog", "7063465e08a93bce31cd89d2e3ca8f602498696e253592ed26f07bf7e703cf328581e1471a7ba7ab119b1a9ebdf8be41");
 	t(SHA3_512,  "The quick brown fox jumps over the lazy dog", "01dedd5de4ef14642445ba5f5b97c15e47b9ad931326e4b0727cd94cefc44fff23f07bf543139939b49128caf436dc1bdee54fcb24023a08d9403f9b4bf0d450");
 	t(WHIRLPOOL, "The quick brown fox jumps over the lazy dog", "b97de512e91e3828b40d2b0fdce9ceb3c4a71f9bea8d88e75c4fa854df36725fd2b52eb6544edcacd6f8beddfea403cb55ae31f03ad62a5ef54e42ee82c3fb35");
+	t(XXH64,     "The quick brown fox jumps over the lazy dog", "0b242d361fda71bc");
 
 	t(RIPEMD128, "message digest", "9e327b3d6e523062afc1132d7df9d1b8");
 	t(RIPEMD160, "message digest", "5d0689ef49d2fae572b881b123a85ffa21595f36");
@@ -178,7 +186,7 @@ static void test_hash_func(const struct hash_func_s *func)
 	if (!tested)
 		g_test_incomplete("not implemented");
 
-	select_func(func->id, false);
+	select_hash_func(func->id, false);
 }
 
 static void test_hash_func_hmac(const struct hash_func_s *func)
@@ -192,7 +200,7 @@ static void test_hash_func_hmac(const struct hash_func_s *func)
 
 #define t(FUNC, TEXT, HMAC, DIGEST) \
 	if (func->id == G_PASTE(HASH_FUNC_, FUNC)) { \
-		select_func(func->id, true); \
+		select_hash_func(func->id, true); \
 		test_hash_func_digest(func->id, TEXT, HMAC, DIGEST); \
 		tested = true; \
 	}
@@ -317,12 +325,34 @@ static void test_hash_func_hmac(const struct hash_func_s *func)
 		"Jefe",
 		"5a4bfeab6166427c7a3647b747292b8384537cdb89afb3bf5665e4c5e709350b287baec921fd7ca0ee7a0c31d022a95e1fc92ba9d77df883960275beb4e62024");
 
+	// https://docs.python.org/3/library/hashlib.html
+	t(BLAKE2S,
+		"message",
+		"secret key",
+		"e3c8102868d28b5ff85fc35dda07329970d1a01e273c37481326fe0c861c8142");
+	t(BLAKE2S,
+		"",
+		"",
+		"eaf4bb25938f4d20e72656bbbc7a9bf63c0c18537333c35bdb67db1402661acd");
+	t(BLAKE2S,
+		"This is a test using a larger than block-size key and a larger than block-size data. The key needs to be hashed before being used by the HMAC algorithm.",
+		"\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa",
+		"cb60f6a791f140bf8aa2e51ff358cdb2cc5c0333045b7fb77aba7ab3b0cfb237");
+	t(BLAKE2B,
+		"",
+		"",
+		"198cd2006f66ff83fbbd913f78aca2251caf4f19fe9475aade8cf2091b99a68466775177424f58286886cbae8229644cec747237d4b721735485e17372fdf59c");
+	t(BLAKE2B,
+		"This is a test using a larger than block-size key and a larger than block-size data. The key needs to be hashed before being used by the HMAC algorithm.",
+		"\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa",
+		"ab347980a64b5e825dd10e7d32fd43a01a8e6dea267ab9ad7d913524526618925311afbcb0c49519cbebdd709540a8d725fb911ac2aee9b2a3aa43d796123393");
+
 #undef t
 
 	if (!tested)
 		g_test_incomplete("not implemented");
 
-	select_func(func->id, false);
+	select_hash_func(func->id, false);
 }
 
 static void test_opt_help(void)
@@ -468,7 +498,7 @@ static void test_opt_file(void)
 		g_shell_parse_argv(args, &argc, &argv, NULL);
 		g_free(args);
 
-		select_func(HASH_FUNC_MD5, true);
+		select_hash_func(HASH_FUNC_MD5, true);
 
 		opts_preinit(&argc, &argv);
 		opts_postinit();
@@ -518,7 +548,7 @@ static void test_opt_file_list(void)
 		g_shell_parse_argv(args, &argc, &argv, NULL);
 		g_free(args);
 
-		select_func(HASH_FUNC_MD5, true);
+		select_hash_func(HASH_FUNC_MD5, true);
 
 		opts_preinit(&argc, &argv);
 		opts_postinit();
@@ -550,8 +580,8 @@ static void test_opt_file_list(void)
 static void test_digest_format_hex_lower()
 {
 	if (g_test_subprocess()) {
-		gui_set_view(GUI_VIEW_TEXT);
-		select_func(HASH_FUNC_MD5, true);
+		select_gui_view(GUI_VIEW_TEXT);
+		select_hash_func(HASH_FUNC_MD5, true);
 		select_digest_format(DIGEST_FORMAT_HEX_LOWER);
 
 		puts(gtk_entry_get_text(gui.hash_widgets[HASH_FUNC_MD5].entry_text));
@@ -567,9 +597,8 @@ static void test_digest_format_hex_lower()
 static void test_digest_format_hex_upper()
 {
 	if (g_test_subprocess()) {
-		gui_set_view(GUI_VIEW_TEXT);
-		delay();
-		select_func(HASH_FUNC_MD5, true);
+		select_gui_view(GUI_VIEW_TEXT);
+		select_hash_func(HASH_FUNC_MD5, true);
 		select_digest_format(DIGEST_FORMAT_HEX_UPPER);
 
 		puts(gtk_entry_get_text(gui.hash_widgets[HASH_FUNC_MD5].entry_text));
@@ -585,8 +614,8 @@ static void test_digest_format_hex_upper()
 static void test_digest_format_base64()
 {
 	if (g_test_subprocess()) {
-		gui_set_view(GUI_VIEW_TEXT);
-		select_func(HASH_FUNC_MD5, true);
+		select_gui_view(GUI_VIEW_TEXT);
+		select_hash_func(HASH_FUNC_MD5, true);
 		select_digest_format(DIGEST_FORMAT_BASE64);
 
 		puts(gtk_entry_get_text(gui.hash_widgets[HASH_FUNC_MD5].entry_text));
@@ -601,8 +630,7 @@ static void test_digest_format_base64()
 
 static void test_init(void)
 {
-	gui_set_view(GUI_VIEW_TEXT);
-	delay();
+	select_gui_view(GUI_VIEW_TEXT);
 
 	const char * const lib = g_getenv("GTKHASH_TEST_LIB");
 

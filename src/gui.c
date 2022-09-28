@@ -39,7 +39,7 @@
 #include "hash/digest-format.h"
 #include "hash/hash-func.h"
 
-#define GUI_XML_RESOURCE "/org/gtkhash/gtkhash-gtk3.xml"
+#define GUI_XML_RESOURCE "/org/gtkhash/gtkhash-gtk3.ui"
 
 struct gui_s gui = {
 	.view = GUI_VIEW_INVALID,
@@ -268,7 +268,7 @@ void gui_init(void)
 	// Override user icon theme when running in confined snap environment
 	if (g_strcmp0(g_getenv("SNAP_NAME"), PACKAGE) == 0) {
 		g_object_set(gtk_settings_get_default(),
-			"gtk-icon-theme-name", "Humanity", NULL);
+			"gtk-icon-theme-name", "Yaru", NULL);
 	}
 
 	resources_register_resource();
@@ -792,25 +792,11 @@ void gui_check_digests(void)
 		const char *str_out = gtk_entry_get_text(entry);
 		const char *icon_out = NULL;
 
-		switch (format) {
-			case DIGEST_FORMAT_HEX_LOWER:
-			case DIGEST_FORMAT_HEX_UPPER:
-				if (*str_in && (g_ascii_strcasecmp(str_in, str_out) == 0)) {
-					// FIXME: find a real alternative for GTK_STOCK_YES
-					icon_out = "gtk-yes";
-					icon_in = "gtk-yes";
-				}
-				break;
-			case DIGEST_FORMAT_BASE64:
-				if (*str_in && (strcmp(str_in, str_out) == 0)) {
-					icon_out = "gtk-yes";
-					icon_in = "gtk-yes";
-				}
-				break;
-			default:
-				g_assert_not_reached();
+		if (*str_in && gtkhash_digest_format_compare(str_in, str_out, format)) {
+			// FIXME: find a real alternative for GTK_STOCK_YES
+			icon_out = "gtk-yes";
+			icon_in = "gtk-yes";
 		}
-
 		gtk_entry_set_icon_from_icon_name(entry, GTK_ENTRY_ICON_SECONDARY,
 			icon_out);
 	}

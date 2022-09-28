@@ -14,13 +14,14 @@ Build-Depends: debhelper-compat (= 13),
 	       intltool,
 	       xvfb,
 	       xauth,
+	       automake,
 Standards-Version: 4.6.0
 Homepage: https://github.com/tristanheaven/gtkhash
 Vcs-Browser: https://gitlab.com/kaisenlinux/packages/gtkhash
 Vcs-Git: https://gitlab.com/kaisenlinux/packages/gtkhash.git
 
 Package: gtkhash
-Architecture: any
+Architecture: amd64
 Depends: ${shlibs:Depends},
 	 ${misc:Depends},
 Description: GTK+ utility for computing checksums and more

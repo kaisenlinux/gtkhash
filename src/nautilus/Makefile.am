@@ -13,6 +13,10 @@ BUILT_SOURCES = properties-resources.c
 
 CLEANFILES = properties-resources.c *.gcda *.gcno
 
+EXTRA_DIST = \
+	meson.build \
+	extension.map.in
+
 if ENABLE_CAJA
 
 cajadir = $(CAJA_EXTENSION_DIR)
@@ -30,7 +34,7 @@ libgtkhash_properties_caja_la_SOURCES = \
 libgtkhash_properties_caja_la_CPPFLAGS = \
 	$(common_cppflags) \
 	$(CAJA_CFLAGS) \
-	-DIN_CAJA_EXTENSION=1
+	-DIN_CAJA_EXTENSION
 
 libgtkhash_properties_caja_la_CFLAGS = $(GTKHASH_CFLAGS)
 
@@ -61,7 +65,7 @@ libgtkhash_properties_nautilus_la_SOURCES = \
 libgtkhash_properties_nautilus_la_CPPFLAGS = \
 	$(common_cppflags) \
 	$(NAUTILUS_CFLAGS) \
-	-DIN_NAUTILUS_EXTENSION=1
+	-DIN_NAUTILUS_EXTENSION
 
 libgtkhash_properties_nautilus_la_CFLAGS = $(GTKHASH_CFLAGS)
 
@@ -92,7 +96,7 @@ libgtkhash_properties_nemo_la_SOURCES = \
 libgtkhash_properties_nemo_la_CPPFLAGS = \
 	$(common_cppflags) \
 	$(NEMO_CFLAGS) \
-	-DIN_NEMO_EXTENSION=1
+	-DIN_NEMO_EXTENSION
 
 libgtkhash_properties_nemo_la_CFLAGS = $(GTKHASH_CFLAGS)
 
@@ -103,37 +107,6 @@ libgtkhash_properties_nemo_la_LDFLAGS = \
 libgtkhash_properties_nemo_la_LIBADD = \
 	$(common_libadd) \
 	$(NEMO_LIBS)
-
-endif
-
-if ENABLE_PEONY
-
-peonydir = $(PEONY_EXTENSION_DIR)
-peony_LTLIBRARIES = libgtkhash-properties-peony.la
-
-nodist_libgtkhash_properties_peony_la_SOURCES = \
-	properties-resources.c
-
-libgtkhash_properties_peony_la_SOURCES = \
-	properties.c properties.h \
-	properties-hash.c properties-hash.h \
-	properties-list.c properties-list.h \
-	properties-prefs.c properties-prefs.h
-
-libgtkhash_properties_peony_la_CPPFLAGS = \
-	$(common_cppflags) \
-	$(PEONY_CFLAGS) \
-	-DIN_PEONY_EXTENSION=1
-
-libgtkhash_properties_peony_la_CFLAGS = $(GTKHASH_CFLAGS)
-
-libgtkhash_properties_peony_la_LDFLAGS = \
-	$(common_ldflags) \
-	-export-symbols-regex ^peony_module_
-
-libgtkhash_properties_peony_la_LIBADD = \
-	$(common_libadd) \
-	$(PEONY_LIBS)
 
 endif
 
@@ -154,7 +127,7 @@ libgtkhash_properties_thunar_la_SOURCES = \
 libgtkhash_properties_thunar_la_CPPFLAGS = \
 	$(common_cppflags) \
 	$(THUNAR_CFLAGS) \
-	-DIN_THUNAR_EXTENSION=1
+	-DIN_THUNAR_EXTENSION
 
 libgtkhash_properties_thunar_la_CFLAGS = $(GTKHASH_CFLAGS)
 
@@ -170,7 +143,7 @@ endif
 
 properties-resources.c: \
 	../../data/nautilus/gtkhash-properties.gresource.xml \
-	../../data/nautilus/gtkhash-properties.xml
+	../../data/nautilus/gtkhash-properties.ui
 	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES) \
 		--c-name gtkhash_properties_resources \
 		--internal \

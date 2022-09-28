@@ -2,7 +2,7 @@ noinst_LTLIBRARIES = hash.la
 
 hash_la_SOURCES = \
 	digest.c digest.h \
-	digest-format.h \
+	digest-format.c digest-format.h \
 	hash-file.c hash-file.h \
 	hash-func.c hash-func.h \
 	hash-lib.c hash-lib.h \
@@ -22,7 +22,11 @@ hash_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(GIO_LIBS)
 
-EXTRA_DIST = md6/md6_compress.c md6/md6_mode.c
+EXTRA_DIST = \
+	md6/md6.h \
+	md6/md6_compress.c \
+	md6/md6_mode.c \
+	meson.build
 
 if ENABLE_BLAKE2
 hash_la_SOURCES += hash-lib-blake2.c
@@ -54,8 +58,8 @@ hash_la_SOURCES += hash-lib-mbedtls.c
 hash_la_LIBADD += $(MBEDTLS_LIBS)
 endif
 
-if ENABLE_MD6
-hash_la_SOURCES += hash-lib-md6.c md6/md6.c md6/md6.h
+if ENABLE_INTERNAL_MD6
+hash_la_SOURCES += hash-lib-md6.c
 endif
 
 if ENABLE_NETTLE

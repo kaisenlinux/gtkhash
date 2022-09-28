@@ -1,10 +1,13 @@
 #!/usr/bin/make -f
 
 %:
-	dh $@ --without autoreconf
+	dh $@
 
 override_dh_auto_configure:
-	./configure --prefix=/usr --with-gtk=3.0 --enable-nettle --enable-gcrypt --enable-nautilus --enable-thunar --enable-nemo --enable-caja
+	automake --add-missing
+	./configure --prefix=/usr --with-gtk=3.0 --enable-nettle --enable-gcrypt --enable-nautilus --enable-thunar --enable-nemo --enable-caja --enable-blake2 --enable-gtkhash --enable-libcrypto --enable-native-file-chooser --enable-linux-crypto --enable-zlib
+
+override_dh_auto_test:
 
 override_dh_installchangelogs:
 	dh_installchangelogs NEWS

@@ -1,6 +1,6 @@
 AC_PREREQ([2.61])
-AC_INIT([GtkHash], [1.4])
-AC_SUBST([RELEASE_DATE], [2020-07-11])
+AC_INIT([GtkHash], [1.5])
+AC_SUBST([RELEASE_DATE], [2022-09-21])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_AUX_DIR([build-aux])
@@ -12,6 +12,13 @@ AC_PROG_CC_C99
 AM_PROG_CC_C_O
 AM_PROG_AR
 LT_INIT
+
+GETTEXT_PACKAGE="${PACKAGE}"
+AC_SUBST([GETTEXT_PACKAGE])
+AC_DEFINE_UNQUOTED([GETTEXT_PACKAGE], ["${GETTEXT_PACKAGE}"], [Define the gettext package])
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION([0.19.7])
+AM_CONDITIONAL([ENABLE_NLS], [test "${enable_nls}" != "no"])
 
 GTKHASH_CFLAGS=""
 
@@ -28,12 +35,19 @@ for opt in \
 	-Wcast-align \
 	-Winit-self \
 	-Wfloat-equal \
+	-Wformat \
+	-Wformat-nonliteral \
+	-Wformat-overflow \
+	-Wformat-security \
+	-Wformat-signedness \
+	-Wformat-truncation \
 	-Wlogical-op \
 	-Wmissing-declarations \
 	-Wmissing-noreturn \
 	-Wredundant-decls \
 	-Wshadow \
 	-Wswitch-default \
+	-Wundef \
 	-Wwrite-strings \
 	-Wno-parentheses-equality
 do
@@ -148,8 +162,10 @@ if test "${enable_gcrypt}" = "yes" ; then
 	AM_PATH_LIBGCRYPT(["${HASH_LIB_GCRYPT_MIN_VER}"], [:], [AC_MSG_ERROR([Libgcrypt not found])])
 	AC_DEFINE([ENABLE_GCRYPT], [1], [Libgcrypt])
 
-	ac_save_CFLAGS="${CFLAGS}"
-	CFLAGS="${CFLAGS} ${LIBGCRYPT_CFLAGS} ${LIBGCRYPT_LIBS}"
+	ac_save_CPPFLAGS="${CPPFLAGS}"
+	ac_save_LIBS="${LIBS}"
+	CPPFLAGS="${CPPFLAGS} ${LIBGCRYPT_CFLAGS}"
+	LIBS="${LIBS} ${LIBGCRYPT_LIBS}"
 
 	AC_CHECK_DECL([GCRY_MD_BLAKE2B_512],
 		[gcrypt_funcs="${gcrypt_funcs} BLAKE2b BLAKE2s"], [:],
@@ -157,8 +173,12 @@ if test "${enable_gcrypt}" = "yes" ; then
 	AC_CHECK_DECL([GCRY_MD_SHA3_512],
 		[gcrypt_funcs="${gcrypt_funcs} SHA3-224 SHA3-256 SHA3-384 SHA3-512"], [:],
 		[#include <gcrypt.h>])
+	AC_CHECK_DECL([GCRY_MD_SM3],
+		[gcrypt_funcs="${gcrypt_funcs} SM3"], [:],
+		[#include <gcrypt.h>])
 
-	CFLAGS="${ac_save_CFLAGS}"
+	CPPFLAGS="${ac_save_CPPFLAGS}"
+	LIBS="${ac_save_LIBS}"
 else
 	AC_DEFINE([ENABLE_GCRYPT], [0], [Libgcrypt])
 fi
@@ -186,12 +206,12 @@ AC_ARG_ENABLE([internal-md6],
 	[AS_HELP_STRING([--disable-internal-md6], [do not use the internal MD6 library])],
 	[enable_internal_md6="${enableval}"], [enable_internal_md6="yes"])
 AC_MSG_RESULT([${enable_internal_md6}])
-AM_CONDITIONAL([ENABLE_MD6], [test "${enable_internal_md6}" = "yes"])
+AM_CONDITIONAL([ENABLE_INTERNAL_MD6], [test "${enable_internal_md6}" = "yes"])
 
 if test "${enable_internal_md6}" = "yes" ; then
-	AC_DEFINE([ENABLE_MD6], [1], [MD6])
+	AC_DEFINE([ENABLE_INTERNAL_MD6], [1], [MD6])
 else
-	AC_DEFINE([ENABLE_MD6], [0], [MD6])
+	AC_DEFINE([ENABLE_INTERNAL_MD6], [0], [MD6])
 fi
 # }}}
 
@@ -214,9 +234,9 @@ fi
 # }}}
 
 # linux crypto option {{{
-AC_MSG_CHECKING([whether to use the Linux-2.6.38+ hash algorithm interface])
+AC_MSG_CHECKING([whether to use Linux kernel AF_ALG])
 AC_ARG_ENABLE([linux-crypto],
-	[AS_HELP_STRING([--enable-linux-crypto], [use the Linux-2.6.38+ hash algorithm interface])],
+	[AS_HELP_STRING([--enable-linux-crypto], [use Linux kernel AF_ALG])],
 	[enable_linux_crypto="${enableval}"], [enable_linux_crypto="no"])
 AC_MSG_RESULT([${enable_linux_crypto}])
 AM_CONDITIONAL([ENABLE_LINUX_CRYPTO], [test "${enable_linux_crypto}" = "yes"])
@@ -360,24 +380,6 @@ if test "${enable_nemo}" = "yes" ; then
 fi
 # }}}
 
-# peony option {{{
-AC_MSG_CHECKING([whether to build the Peony extension])
-AC_ARG_ENABLE([peony],
-	[AS_HELP_STRING([--enable-peony], [build the Peony extension])],
-	[enable_peony="${enableval}"], [enable_peony="no"])
-AC_MSG_RESULT([${enable_peony}])
-AM_CONDITIONAL([ENABLE_PEONY], [test "${enable_peony}" = "yes"])
-
-if test "${enable_peony}" = "yes" ; then
-	# Check for peony
-	PKG_CHECK_MODULES([PEONY], [libpeony-extension])
-	AC_SUBST([PEONY_CFLAGS])
-	AC_SUBST([PEONY_LIBS])
-	PEONY_EXTENSION_DIR=`${PKG_CONFIG} --variable=extensiondir libpeony-extension`
-	AC_SUBST([PEONY_EXTENSION_DIR])
-fi
-# }}}
-
 # thunar option {{{
 AC_MSG_CHECKING([whether to build the Thunar extension])
 AC_ARG_ENABLE([thunar],
@@ -406,23 +408,7 @@ AM_CONDITIONAL([ENABLE_NAUTILUS_DATA], [
 	test "${enable_caja}" = "yes" ||
 	test "${enable_nautilus}" = "yes" ||
 	test "${enable_nemo}" = "yes" ||
-	test "${enable_peony}" = "yes" ||
 	test "${enable_thunar}" = "yes"])
-
-# nls option {{{
-AM_CONDITIONAL([ENABLE_NLS], [test "${enable_nls}" != "no"])
-
-if test "${enable_nls}" != "no" ; then
-	AC_DEFINE([ENABLE_NLS], [1], [Native Language Support])
-	GETTEXT_PACKAGE="${PACKAGE}"
-	AC_SUBST([GETTEXT_PACKAGE])
-	AC_DEFINE_UNQUOTED([GETTEXT_PACKAGE], ["${GETTEXT_PACKAGE}"], [Define the gettext package])
-	IT_PROG_INTLTOOL([0.40.6])
-	AM_GLIB_GNU_GETTEXT
-else
-	AC_DEFINE([ENABLE_NLS], [0], [Native Language Support])
-fi
-# }}}
 
 # Matches preferred order from src/hash/hash-lib.c
 HASH_LIBS="blake2 gcrypt libcrypto mbedtls nettle linux_crypto zlib glib_checksums internal_md6"
@@ -439,14 +425,11 @@ AC_CONFIG_FILES([data/appdata/org.gtkhash.gtkhash.appdata.xml.in])
 AC_CONFIG_FILES([data/appdata/org.gtkhash.caja.metainfo.xml.in])
 AC_CONFIG_FILES([data/appdata/org.gtkhash.nautilus.metainfo.xml.in])
 AC_CONFIG_FILES([data/appdata/org.gtkhash.nemo.metainfo.xml.in])
-AC_CONFIG_FILES([data/appdata/org.gtkhash.peony.metainfo.xml.in])
 AC_CONFIG_FILES([data/appdata/org.gtkhash.thunar.metainfo.xml.in])
 AC_CONFIG_FILES([data/caja/Makefile])
 AC_CONFIG_FILES([data/caja/libgtkhash-properties-caja.caja-extension.in])
 AC_CONFIG_FILES([data/icons/Makefile])
 AC_CONFIG_FILES([data/nautilus/Makefile])
-AC_CONFIG_FILES([data/peony/Makefile])
-AC_CONFIG_FILES([data/peony/libgtkhash-properties-peony.peony-extension.in])
 AC_CONFIG_FILES([po/Makefile.in])
 AC_CONFIG_FILES([src/Makefile])
 AC_CONFIG_FILES([src/hash/Makefile])
@@ -461,7 +444,6 @@ echo "  gtkhash:            ${enable_gtkhash} (gtk+-${with_gtk})"
 echo "  gtkhash-caja:       ${enable_caja}"
 echo "  gtkhash-nautilus:   ${enable_nautilus}"
 echo "  gtkhash-nemo:       ${enable_nemo}"
-echo "  gtkhash-peony:      ${enable_peony}"
 echo "  gtkhash-thunar:     ${enable_thunar} (thunarx-${with_thunarx})"
 
 blake2_funcs="
@@ -504,7 +486,8 @@ linux_crypto_funcs="
 	SHA224 SHA256 SHA384 SHA512
 	SHA3-224 SHA3-256 SHA3-384 SHA3-512
 	TIGER192
-	WHIRLPOOL"
+	WHIRLPOOL
+	XXH64"
 mbedtls_funcs="
 	MD2
 	MD4
@@ -546,7 +529,8 @@ for func in \
 	SHA3-224 SHA3-256 SHA3-384 SHA3-512 \
 	SM3 \
 	TIGER192 \
-	WHIRLPOOL
+	WHIRLPOOL \
+	XXH64
 do
 	printf "  %-20s" "${func}"
 	enabled=""

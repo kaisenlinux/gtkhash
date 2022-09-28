@@ -1,3 +1,9 @@
+gtkhash (1.5-1kaisen) kaisen-packages; urgency=medium
+
+  * Import the 1.5 version
+
+ -- Kevin Chevreuil - Kaisen <kaisen@kaisenlinux.org>  Sun, 25 Sep 2022 18:16:14 +0100
+
 gtkhash (1.4-2kaisen) kaisen-packages; urgency=medium
 
   * Add polkit
