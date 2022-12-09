@@ -1,3 +1,9 @@
+gtkhash (1.5-2kaisen) kaisen-packages; urgency=medium
+
+  * Drop the support of Nautilus (cannot built with it since the release 43 of GNOME)
+
+ -- Kevin Chevreuil - Kaisen <kaisen@kaisenlinux.org>  Fri, 09 Dec 2022 03:29:07 +0100
+
 gtkhash (1.5-1kaisen) kaisen-packages; urgency=medium
 
   * Import the 1.5 version
